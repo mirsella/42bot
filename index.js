@@ -16,24 +16,33 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
     process.exit(0);
   });
 
-  const page = await browser.newPage()
-  await page.goto(process.env.url, {waitUntil: 'networkidle0'})
+  const pageLogin = await browser.newPage()
+  await pageLogin.goto(process.env.url, {waitUntil: 'networkidle0'})
   console.log("Page loaded")
 
-  if (page.waitForSelector('a.cc-btn:nth-child(2)')) {
-    await page.click('a.cc-btn:nth-child(2)')
+  if (pageLogin.waitForSelector('a.cc-btn:nth-child(2)')) {
+    await pageLogin.click('a.cc-btn:nth-child(2)')
     console.log("Clicked on accept cookies")
   }
 
-  if (page.url().match(/sign_in/)) {
+  if (pageLogin.url().match(/sign_in/)) {
     console.log("Logging in")
-    await page.waitForSelector('#user_email')
-    await page.type('#user_email', process.env.email)
-    await page.type('#user_password', process.env.password)
-    await page.click('input.btn')
-    await page.waitForNavigation()
+    await pageLogin.waitForSelector('#user_email')
+    await pageLogin.type('#user_email', process.env.email)
+    await pageLogin.type('#user_password', process.env.password)
+    await pageLogin.click('input.btn')
+    await pageLogin.waitForNavigation()
   } else {
     console.log("already logged in")
+  }
+
+  let lastReload = new Date()
+  class admission {
+    constructor(page) {
+      this.page = browser.newPage()
+      this.lastReload = new Date()
+    }
+
   }
 
   /*
