@@ -10,7 +10,7 @@ function sleep(ms) {
 
 puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720}, userDataDir: 'ChromeSession' }).then(async browser => {
 
-  process.on('SIGINT', () => {
+  process.on('SIGINT', async () => {
     console.log("received SIGINT")
     await browser.close()
     process.exit(0);
@@ -20,8 +20,13 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
   await pageLogin.goto(process.env.url, {waitUntil: 'networkidle0'})
   console.log("Page loaded")
 
-  if (pageLogin.waitForSelector('a.cc-btn:nth-child(2)')) {
-    await pageLogin.click('a.cc-btn:nth-child(2)')
+  const cookiesVisibility = await pageLogin.$eval('.cc-allow', (elem) => {
+    return window.getComputedStyle(elem).getPropertyValue('display') !== 'none' && elem.offsetHeight
+  })
+
+  if (cookiesVisibility) {
+    cookies = await pageLogin.$('.cc-allow')
+    await cookies.click()
     console.log("Clicked on accept cookies")
   }
 
@@ -35,25 +40,72 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
   } else {
     console.log("already logged in")
   }
+  pageLogin.close()
 
   let lastReload = new Date()
+  let pageCount = 1
+
   class admission {
-    constructor(page) {
-      this.page = browser.newPage()
-      this.lastReload = new Date()
+
+    constructor() {
+      this.pageIndex = pageCount
+      pageCount += 1
+      this.refreshing = true;
+      (async () => {
+        const page = await browser.newPage()
+        while (this.refreshing) {
+          let now = new Date()
+          if (now - lastReload > 1000) {
+            lastReload = now
+            await this.refresh(page)
+          }
+          await sleep(100)
+        }
+      })()
     }
 
+    async refresh(page) {
+      await page.goto(process.env.url)
+      await page.waitForSelector('input.btn')
+      const btn = await page.$('input.btn')
+      const btnValue = await (await btn.getProperty('value')).jsonValue()
+      console.log("page: ", this.pageIndex, btnValue)
+      if (! btnValue.match(/impossible/i)) {
+        this.submit(page)
+      }
+
+    }
+
+    async submit(page) {
+      this.refreshing = false
+
+      await page.$x('input.btn', (btn) => {
+        btn.scrollIntoView()
+      })
+
+      // click on button
+      try {
+        await page.click('input.btn')
+        console.log("clicked on button")
+      } catch (e) {
+        console.log("error clicked on button: ", e)
+      }
+
+      // submit form
+      try {
+        await page.$x('.col-lg-3 > form:nth-child(1)', (elem) => {
+          elem.submit()
+        })
+        console.log("submitted form")
+      } catch (e) {
+        console.log("error submitting form: ", e)
+      }
+
+    }
   }
-
-  /*
-  var dernière date de reload
-  chaque onglet va check si sa fait plus d'une second qu'il y a une un reload,
-  si non il reload dans 1sec - var de dernier reload et set var de dernier reload
-
-  aller sur la page ou le bouton change et scroll jusqu'au bouton
-  detecte si le boutton est actif/match string et click dessus, puis cherche sur un autre boutton oui/confirmer
-  */
-
-
+  parallel = 3
+  for (let i = 0; i < parallel; i++) {
+    new admission()
+  }
 })
 
