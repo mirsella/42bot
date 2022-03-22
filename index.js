@@ -69,8 +69,9 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
       await page.waitForSelector('input.btn')
       const btn = await page.$('input.btn')
       const btnValue = await (await btn.getProperty('value')).jsonValue()
-      console.log("page: ", this.pageIndex, btnValue)
+      console.log("page n°", this.pageIndex, btnValue)
       if (! btnValue.match(/impossible/i)) {
+        console.log("change on page n°", this.pageIndex)
         this.submit(page)
       }
 
@@ -103,7 +104,8 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
 
     }
   }
-  parallel = 3
+
+  parallel = 5
   for (let i = 0; i < parallel; i++) {
     new admission()
   }
