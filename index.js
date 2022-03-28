@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer-extra')
-
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 puppeteer.use(StealthPlugin())
+const telegramnotif = require('telegramnotif');
 require('dotenv').config()
 
 function sleep(ms) {
@@ -71,8 +71,9 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
       const btnValue = await (await btn.getProperty('value')).jsonValue()
       console.log("page n°", this.pageIndex, btnValue)
       if (! btnValue.match(/impossible/i)) {
-        console.log("change on page n°", this.pageIndex)
+        console.log("change on page n°", this.pageIndex, btnValue)
         this.submit(page)
+        telegramnotif(process.env.TgId, process.env.TgToken, "change on page n°" + this.pageIndex + " " + btnValue)
       }
 
     }
