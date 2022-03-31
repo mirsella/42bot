@@ -65,17 +65,19 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
     }
 
     async refresh(page) {
-      await page.goto(process.env.url)
-      await page.waitForSelector('input.btn')
-      const btn = await page.$('input.btn')
-      const btnValue = await (await btn.getProperty('value')).jsonValue()
-      console.log("page n°", this.pageIndex, btnValue)
-      if (! btnValue.match(/impossible/i)) {
-        console.log("change on page n°", this.pageIndex, btnValue)
-        this.submit(page)
-        telegramnotif(process.env.TgId, process.env.TgToken, "change on page n°" + this.pageIndex + " " + btnValue)
+      await page.goto(process.env.url, {waitUntil: 'domcontentloaded'})
+      try {
+        await page.waitForSelector('input.btn', {timeout: 1000})
+        const btnValue = await (await btn.getProperty('value')).jsonValue()
+        console.log("page n°", this.pageIndex, btnValue)
+        if (! btnValue.match(/impossible/i)) {
+          console.log("change on page n°", this.pageIndex, btnValue)
+          this.submit(page)
+          telegramnotif(process.env.TgId, process.env.TgToken, "change on page n°" + this.pageIndex + " " + btnValue)
+        }
+      } catch (e) {
+        console.log("no input.btn", this.pageIndex)
       }
-
     }
 
     async submit(page) {
@@ -93,7 +95,7 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
         console.log("error clicked on button: ", e)
       }
 
-      // submit form
+      // submit form if button didn't work
       try {
         await page.$x('.col-lg-3 > form:nth-child(1)', (elem) => {
           elem.submit()
