@@ -76,7 +76,7 @@ puppeteer.launch({ headless: false, defaultViewport: {width: 1280, height: 720},
           telegramnotif(process.env.TgId, process.env.TgToken, "change on page n°" + this.pageIndex + " " + btnValue)
         }
       } catch (e) {
-        console.log("no input.btn", this.pageIndex)
+        console.log("no input.btn on page n°", this.pageIndex)
       }
     }
 
